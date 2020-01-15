@@ -13,7 +13,6 @@ import (
 
 func main() {
 	h1 := func(w http.ResponseWriter, req *http.Request) {
-		fmt.Printf("req is %+v\n", req)
 		io.WriteString(w, fmt.Sprintf("Hello from a H1 for %q!\n", req.URL.Path))
 	}
 
@@ -47,7 +46,6 @@ func natsHandleFunc(subject string, handler func(http.ResponseWriter, *http.Requ
 		nc = natsConnect()
 	}
 	var _rb [256]byte
-	respBuf := bytes.NewBuffer(_rb[:0])
 
 	_, err := nc.Subscribe(subject, func(m *nats.Msg) {
 		// Determine if HTTP request format. For now assume its not and construct one.
@@ -59,7 +57,11 @@ func natsHandleFunc(subject string, handler func(http.ResponseWriter, *http.Requ
 		rr := httptest.NewRecorder()
 		// Call into our handler.
 		handler(rr, req)
-		rr.Result().Write(respBuf)
+		// Generate HTTP response.
+		r := rr.Result()
+		r.ContentLength = int64(rr.Body.Len())
+		respBuf := bytes.NewBuffer(_rb[:0])
+		r.Write(respBuf)
 		m.Respond(respBuf.Bytes())
 	})
 
