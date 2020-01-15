@@ -16,7 +16,7 @@ func main() {
 		io.WriteString(w, fmt.Sprintf("Hello from a H1 for %q!\n", req.URL.Path))
 	}
 
-	// could be nats.HandleFunc() if added.
+	// Handle via NATS.
 	natsHandleFunc("foo", h1)
 
 	// Handle via HTTP
