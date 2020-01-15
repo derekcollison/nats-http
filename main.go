@@ -15,7 +15,6 @@ func main() {
 	h1 := func(w http.ResponseWriter, req *http.Request) {
 		fmt.Printf("req is %+v\n", req)
 		io.WriteString(w, fmt.Sprintf("Hello from a H1 for %q!\n", req.URL.Path))
-		//w.Write([]byte(fmt.Sprintf("Hello from a H1 for %q!\n", req.URL.Path)))
 	}
 
 	// could be nats.HandleFunc() if added.
