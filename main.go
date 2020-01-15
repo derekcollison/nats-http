@@ -45,7 +45,7 @@ func natsHandleFunc(subject string, handler func(http.ResponseWriter, *http.Requ
 	if nc == nil {
 		nc = natsConnect()
 	}
-	var _rb [256]byte
+	var _rb [512]byte
 
 	_, err := nc.Subscribe(subject, func(m *nats.Msg) {
 		// Determine if HTTP request format. For now assume its not and construct one.
@@ -55,14 +55,21 @@ func natsHandleFunc(subject string, handler func(http.ResponseWriter, *http.Requ
 			log.Printf("Error creating http request: %v", err)
 		}
 		rr := httptest.NewRecorder()
+
 		// Call into our handler.
 		handler(rr, req)
+
 		// Generate HTTP response.
 		r := rr.Result()
 		r.ContentLength = int64(rr.Body.Len())
 		respBuf := bytes.NewBuffer(_rb[:0])
 		r.Write(respBuf)
-		m.Respond(respBuf.Bytes())
+		rb := respBuf.Bytes()
+		// Hack for now since Write() ignores r.Proto and forces HTTP/1.1
+		rb = bytes.Replace(rb, []byte("HTTP/1.1"), []byte("NATS/0.1"), 1)
+
+		// Send response.
+		m.Respond(rb)
 	})
 
 	if err != nil {
